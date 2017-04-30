@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -98,7 +99,7 @@ public class KeyboardAnalyzer {
     private void checkWord(ArrayList<Double> timings) {
         int length = curWord.length();
         int miniScore = 0;
-        for (int i; i < 4*length - 2; i += 2) {
+        for (int i = 0; i < 4*length - 2; i += 2) {
             long value = curTimings.get(i>>1);
             double avg = timings.get(i);
             double stdDev = Math.sqrt(timings.get(i + 1));
@@ -119,8 +120,24 @@ public class KeyboardAnalyzer {
         }
         if (dom*miniScore < num*(2*length - 1)) {
             score += Math.sqrt(length);
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(scoreID, score);
+
+        } else {
+            score -= Math.sqrt(length);
+            if (score < 0) {
+                score = 0;
+            }
+        }
+        checkScore();
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(scoreID, String.valueOf(score));
+        editor.commit();
+    }
+
+    private void checkScore() {
+        Log.i("score", String.valueOf(score));
+        if (score > 50) {
+            Log.i("score", "The score is over 50");
+            score = 0;
         }
     }
 
@@ -149,11 +166,12 @@ public class KeyboardAnalyzer {
                 timings.add(cursor.getDouble(cursor.getColumnIndexOrThrow("d" + String.valueOf(length - 1) + "_avg")));
                 timings.add(cursor.getDouble(cursor.getColumnIndexOrThrow("d" + String.valueOf(length - 1) + "_var")));
 
-                // check if there are enough samples for a good test
+                // check if there are enough samples for a good test and then check if the word timings are good
                 if (count > 20) {
                     checkWord(timings);
                 }
 
+                // get previous values and update with new ones
                 for (int i = 0; i < 4*length - 2; i += 2) {
                     double avg = timings.get(i);
                     double var = timings.get(i + 1);
@@ -171,6 +189,7 @@ public class KeyboardAnalyzer {
                 row.put(TimeProfileContract.TimeProfile.C_COUNT, ++count);
                 dbRead.update(TimeProfileContract.TimeProfile.TABLE_NAME, row, "_id=" + cursor.getLong(cursor.getColumnIndex(TimeProfileContract.TimeProfile._ID)), null);
             } else {
+                // insert new word into database
                 for (int i = 0; i < 4*length - 2; i += 2) {
                     if ((i>>1)%2 == 0) { // i/2 is odd
                         row.put("d" + String.valueOf(i>>2) + "_avg", curTimings.get(i>>1));
