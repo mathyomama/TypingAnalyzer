@@ -7,12 +7,15 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.InputConnection;
 
+import static android.os.SystemClock.elapsedRealtime;
+
 
 public class TypingAnalyzerKeyboard extends InputMethodService implements KeyboardView.OnKeyboardActionListener {
 
     private KeyboardView kv;
     private Keyboard keyboard;
     private KeyboardAnalyzer analyzer;
+    private long timer;
 
     private boolean caps = false;
 
@@ -53,10 +56,12 @@ public class TypingAnalyzerKeyboard extends InputMethodService implements Keyboa
 
     @Override
     public void onPress(int primaryCode) {
+        timer = elapsedRealtime();
     }
 
     @Override
     public void onRelease(int primaryCode) {
+        analyzer.push_char((char)primaryCode, elapsedRealtime() - timer);
     }
 
     @Override
