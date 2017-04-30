@@ -11,14 +11,16 @@ import android.database.sqlite.SQLiteOpenHelper;
 import java.util.ArrayList;
 import java.util.Set;
 
+import static android.os.SystemClock.elapsedRealtime;
 import static java.lang.StrictMath.abs;
 
 public class KeyboardAnalyzer {
     String curWord;
-    ArrayList<Integer> curTimings;
+    ArrayList<Long> curTimings;
     Set<String> wordSet;
     private SQLiteOpenHelper dbHelper;
     SharedPreferences prefs;
+    long timer;
     double score;
     String scoreID = "score";
 
@@ -43,15 +45,40 @@ public class KeyboardAnalyzer {
      * are delimited with space and backspace. Once a word is formed, it is pushed on for further
      * analysis (checked with the database).
      */
-    public void push_char(char c, int duration) {
+    public void push_char(char c, long duration) {
+        long latency = 0;
+        if (curWord.length() > 0) {
+            latency = getLatency(duration);
+        }
         if (c == ' ') {
             // check if the word is in the database and integrate the timings
+            updateEntry();
             // reset the word and the timings
+            resetWord();
         } else if (c == 8) {
-            // reset the word and timings
-        } else if (true) { //TODO check for valid characters
+            resetWord();
+        } else if ((c > 64 && c < 91) || (c > 97 && c < 123)) {
+            if (curWord.length() > 0) {
+                curTimings.add(latency);
+            }
+            curTimings.add(duration);
             curWord = curWord.concat(String.valueOf(c));
         }
+    }
+
+    private long getLatency(long duration) {
+        long newTimer = elapsedRealtime();
+        long latency = newTimer - timer - duration;
+        if (latency < 0) {
+            latency = 0;
+        }
+        timer = newTimer;
+        return latency;
+    }
+
+    private void resetWord() {
+        curWord = "";
+        curTimings.clear();
     }
 
     private double updateMean(double curMean, double value, int curCount) {
@@ -72,10 +99,10 @@ public class KeyboardAnalyzer {
         int length = curWord.length();
         int miniScore = 0;
         for (int i; i < 4*length - 2; i += 2) {
-            int value = curTimings.get(i>>1);
+            long value = curTimings.get(i>>1);
             double avg = timings.get(i);
-            double stddev = Math.sqrt(timings.get(i + 1));
-            if (abs(value - avg) > 0.75*stddev) {
+            double stdDev = Math.sqrt(timings.get(i + 1));
+            if (abs(value - avg) > 0.75*stdDev) {
                 miniScore++;
             }
         }
@@ -130,7 +157,7 @@ public class KeyboardAnalyzer {
                 for (int i = 0; i < 4*length - 2; i += 2) {
                     double avg = timings.get(i);
                     double var = timings.get(i + 1);
-                    int value = curTimings.get(i>>1);
+                    long value = curTimings.get(i>>1);
                     double newAvg = updateMean(avg, value, count);
                     double newVar = updateVar(var, avg, value, count);
                     if ((i>>1)%2 == 0) { // i/2 is odd
@@ -142,7 +169,7 @@ public class KeyboardAnalyzer {
                     }
                 }
                 row.put(TimeProfileContract.TimeProfile.C_COUNT, ++count);
-                dbRead.update(TimeProfileContract.TimeProfile.TABLE_NAME, row, "_id=" + cursor.getLong(cursor.getColumnIndex(TimeProfileContract.TimeProfile._ID)));
+                dbRead.update(TimeProfileContract.TimeProfile.TABLE_NAME, row, "_id=" + cursor.getLong(cursor.getColumnIndex(TimeProfileContract.TimeProfile._ID)), null);
             } else {
                 for (int i = 0; i < 4*length - 2; i += 2) {
                     if ((i>>1)%2 == 0) { // i/2 is odd
