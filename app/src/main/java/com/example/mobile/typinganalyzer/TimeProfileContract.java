@@ -11,7 +11,7 @@ public final class TimeProfileContract {
             "CREATE TABLE " + TimeProfile.TABLE_NAME + " (" +
                     TimeProfile._ID + " INTEGER PRIMARY KEY," +
                     TimeProfile.C_WORD + " TEXT," +
-                    TimeProfile.C_COUNT + " INT" +
+                    TimeProfile.C_COUNT + " INTEGER," +
                     " d0_avg REAL," +
                     " d0_var REAL," +
                     " l0_avg REAL," +
@@ -66,7 +66,7 @@ public final class TimeProfileContract {
                     " l12_var REAL," +
                     " d13_avg REAL," +
                     " d13_var REAL," +
-                    " UNIQUE(" + TimeProfile.C_WORD + ")";
+                    " UNIQUE(" + TimeProfile.C_WORD + "))";
 
     public static final String SQL_DELETE_ENTRIES =
             "DROP TABLE IF EXISTS " + TimeProfile.TABLE_NAME;

@@ -8,30 +8,37 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 import static android.os.SystemClock.elapsedRealtime;
 import static java.lang.StrictMath.abs;
 
 public class KeyboardAnalyzer {
-    String curWord;
-    ArrayList<Long> curTimings;
-    Set<String> wordSet;
-    private SQLiteOpenHelper dbHelper;
-    SharedPreferences prefs;
-    long timer;
-    double score;
-    String scoreID = "score";
+    private String curWord;
+    private ArrayList<Long> curTimings;
+    private Set<String> wordSet;
+    private TimeProfileDbHelper dbHelper;
+    private SharedPreferences prefs;
+    private long timer;
+    private double score;
+    private String scoreID = "score";
+    private Context context;
+    private long id;
 
 
-    KeyboardAnalyzer(Context context) {
+    public KeyboardAnalyzer(Context context) {
+        this.context = context;
         curWord = new String();
         curTimings = new ArrayList<>();
         dbHelper = new TimeProfileDbHelper(context);
         prefs = context.getSharedPreferences(context.getString(R.string.prefs_key), Context.MODE_PRIVATE);
         score = Double.valueOf(prefs.getString(scoreID, "0"));
+        wordSet = new HashSet<>();
+        timer = elapsedRealtime();
 
         // put all the words in a set for quick access later
         String[] wordList = context.getResources().getStringArray(R.array.words);
@@ -58,7 +65,7 @@ public class KeyboardAnalyzer {
             resetWord();
         } else if (c == 8) {
             resetWord();
-        } else if ((c > 64 && c < 91) || (c > 97 && c < 123)) {
+        } else if ((c > 64 && c < 91) || (c > 96 && c < 123)) {
             if (curWord.length() > 0) {
                 curTimings.add(latency);
             }
@@ -134,7 +141,8 @@ public class KeyboardAnalyzer {
     }
 
     private void checkScore() {
-        Log.i("score", String.valueOf(score));
+        //Log.i("score", String.valueOf(score));
+        Toast.makeText(context, String.valueOf(score), Toast.LENGTH_SHORT).show();
         if (score > 50) {
             Log.i("score", "The score is over 50");
             score = 0;
@@ -143,17 +151,21 @@ public class KeyboardAnalyzer {
 
     private void updateEntry() {
         // check if word is in the word set
-        if (wordSet.contains(curWord)) {
+        String word = curWord.toLowerCase();
+        if (wordSet.contains(word)) {
+            Log.i("updateEntry", word);
             SQLiteDatabase dbRead = dbHelper.getReadableDatabase();
             SQLiteDatabase dbWRite = dbHelper.getWritableDatabase();
+
             String selection = TimeProfileContract.TimeProfile.C_WORD + " = ?";
-            String[] selectionArgs = {curWord};
+            String[] selectionArgs = {word};
             Cursor cursor = dbRead.query(TimeProfileContract.TimeProfile.TABLE_NAME, null, selection, selectionArgs, null, null, null);
 
             // check if the query returned anything, yes: update, no: add row
-            int length = curWord.length();
+            int length = word.length();
             ContentValues row = new ContentValues();
             if (cursor.getCount() > 0) {
+                Toast.makeText(context, "updating row", Toast.LENGTH_SHORT).show();
                 cursor.moveToNext();
                 ArrayList<Double> timings = new ArrayList<>();
                 int count = cursor.getInt(cursor.getColumnIndexOrThrow(TimeProfileContract.TimeProfile.C_COUNT));
@@ -167,7 +179,8 @@ public class KeyboardAnalyzer {
                 timings.add(cursor.getDouble(cursor.getColumnIndexOrThrow("d" + String.valueOf(length - 1) + "_var")));
 
                 // check if there are enough samples for a good test and then check if the word timings are good
-                if (count > 20) {
+                if (count > 1) {
+                    Toast.makeText(context, "Got word " + word, Toast.LENGTH_SHORT).show();
                     checkWord(timings);
                 }
 
@@ -190,8 +203,10 @@ public class KeyboardAnalyzer {
                 dbRead.update(TimeProfileContract.TimeProfile.TABLE_NAME, row, "_id=" + cursor.getLong(cursor.getColumnIndex(TimeProfileContract.TimeProfile._ID)), null);
             } else {
                 // insert new word into database
+                Toast.makeText(context, "inserting row", Toast.LENGTH_SHORT).show();
+                row.put(TimeProfileContract.TimeProfile.C_WORD, word);
                 for (int i = 0; i < 4*length - 2; i += 2) {
-                    if ((i>>1)%2 == 0) { // i/2 is odd
+                    if ((i>>1)%2 == 0) { // i/2 is even
                         row.put("d" + String.valueOf(i>>2) + "_avg", curTimings.get(i>>1));
                         row.put("d" + String.valueOf(i>>2) + "_var", 0);
                     } else {
@@ -200,7 +215,12 @@ public class KeyboardAnalyzer {
                     }
                 }
                 row.put(TimeProfileContract.TimeProfile.C_COUNT, 1);
-                dbWRite.insert(TimeProfileContract.TimeProfile.TABLE_NAME, null, row);
+                id = dbWRite.insert(TimeProfileContract.TimeProfile.TABLE_NAME, null, row);
+                Cursor c = dbRead.query(TimeProfileContract.TimeProfile.TABLE_NAME, null, TimeProfileContract.TimeProfile._ID + " = ?", new String[] {String.valueOf(id)}, null, null, null, null);
+                if (c != null) {
+                    c.moveToFirst();
+                    Toast.makeText(context, "checking row is good", Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }

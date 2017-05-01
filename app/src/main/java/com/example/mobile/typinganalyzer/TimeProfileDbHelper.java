@@ -4,14 +4,17 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.widget.Toast;
 
 
 public class TimeProfileDbHelper extends SQLiteOpenHelper {
     public TimeProfileDbHelper(Context context) {
         super(context, TimeProfileContract.DATABASE_NAME, null, TimeProfileContract.DATABASE_VERSION);
+
     }
 
     public void onCreate(SQLiteDatabase db) {
+        //Toast.makeText(this.context, "creating db helper", Toast.LENGTH_SHORT).show();
         db.execSQL(TimeProfileContract.SQL_CREATE_ENTRIES);
     }
 

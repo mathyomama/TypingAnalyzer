@@ -3,9 +3,11 @@ package com.example.mobile.typinganalyzer;
 import android.inputmethodservice.InputMethodService;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.InputConnection;
+import android.widget.Toast;
 
 import static android.os.SystemClock.elapsedRealtime;
 
@@ -27,6 +29,8 @@ public class TypingAnalyzerKeyboard extends InputMethodService implements Keyboa
         kv.setKeyboard(keyboard);
         kv.setOnKeyboardActionListener(this);
         analyzer = new KeyboardAnalyzer(this.getApplicationContext());
+        Log.i("create", "creating keyboard");
+        Toast.makeText(this, "creating keyboard", Toast.LENGTH_SHORT).show();
         return kv;
     }
 
