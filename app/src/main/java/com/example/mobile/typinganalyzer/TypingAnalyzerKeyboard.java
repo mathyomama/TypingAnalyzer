@@ -65,6 +65,7 @@ public class TypingAnalyzerKeyboard extends InputMethodService implements Keyboa
 
     @Override
     public void onRelease(int primaryCode) {
+        Toast.makeText(this, String.valueOf(primaryCode), Toast.LENGTH_SHORT);
         analyzer.push_char((char)primaryCode, elapsedRealtime() - timer);
     }
 

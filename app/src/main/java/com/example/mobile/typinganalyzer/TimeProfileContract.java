@@ -5,12 +5,12 @@ import android.provider.BaseColumns;
 
 public final class TimeProfileContract {
     public static final String DATABASE_NAME = "time_profiles.db";
-    public static final int DATABASE_VERSION = 1;
+    public static final int DATABASE_VERSION = 2;
 
     public static final String SQL_CREATE_ENTRIES =
             "CREATE TABLE " + TimeProfile.TABLE_NAME + " (" +
                     TimeProfile._ID + " INTEGER PRIMARY KEY," +
-                    TimeProfile.C_WORD + " TEXT," +
+                    TimeProfile.C_WORD + " TEXT NOT NULL UNIQUE," +
                     TimeProfile.C_COUNT + " INTEGER," +
                     " d0_avg REAL," +
                     " d0_var REAL," +
@@ -65,8 +65,8 @@ public final class TimeProfileContract {
                     " l12_avg REAL," +
                     " l12_var REAL," +
                     " d13_avg REAL," +
-                    " d13_var REAL," +
-                    " UNIQUE(" + TimeProfile.C_WORD + "))";
+                    " d13_var REAL)";
+                    //" UNIQUE(" + TimeProfile.C_WORD + "))";
 
     public static final String SQL_DELETE_ENTRIES =
             "DROP TABLE IF EXISTS " + TimeProfile.TABLE_NAME;
@@ -74,7 +74,7 @@ public final class TimeProfileContract {
     private TimeProfileContract() {}
 
     public static class TimeProfile implements BaseColumns {
-        public static final String TABLE_NAME = "profiles";
+        public static final String TABLE_NAME = "profile";
         public static final String C_WORD = "word";
         public static final String C_COUNT = "count";
     }
