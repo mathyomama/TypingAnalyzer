@@ -3,6 +3,7 @@ package com.example.mobile.typinganalyzer;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -27,7 +28,7 @@ public class KeyboardAnalyzer {
     private double score;
     private Context context;
     private String scoreID = "score";
-    private final double SCORE_THRESHOLD = 50;
+    private final double SCORE_THRESHOLD = 20;
     private final double COUNT_THRESHOLD = 5;
     private final double STDDEV_THRESHOLD = 2;
 
@@ -164,7 +165,15 @@ public class KeyboardAnalyzer {
         if (score > SCORE_THRESHOLD) {
             Toast.makeText(context, String.valueOf(score) + " is over " + SCORE_THRESHOLD, Toast.LENGTH_SHORT).show();
             score = 0;
+            exitToHome();
         }
+    }
+
+    private void exitToHome() {
+        Intent startMain = new Intent(Intent.ACTION_MAIN);
+        startMain.addCategory(Intent.CATEGORY_HOME);
+        startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(startMain);
     }
 
     /* Called when there is a viable word to investigate. The curWord is first checked against the
