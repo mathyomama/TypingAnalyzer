@@ -29,8 +29,8 @@ public class TypingAnalyzerKeyboard extends InputMethodService implements Keyboa
         kv.setKeyboard(keyboard);
         kv.setOnKeyboardActionListener(this);
         analyzer = new KeyboardAnalyzer(this.getApplicationContext());
-        Log.i("create", "creating keyboard");
-        Toast.makeText(this, "creating keyboard", Toast.LENGTH_SHORT).show();
+        //Log.i("create", "creating keyboard");
+        //Toast.makeText(this, "creating keyboard", Toast.LENGTH_SHORT).show();
         return kv;
     }
 
@@ -65,8 +65,8 @@ public class TypingAnalyzerKeyboard extends InputMethodService implements Keyboa
 
     @Override
     public void onRelease(int primaryCode) {
-        Toast.makeText(this, String.valueOf(primaryCode), Toast.LENGTH_SHORT);
-        analyzer.push_char((char)primaryCode, elapsedRealtime() - timer);
+        //Toast.makeText(this, String.valueOf(primaryCode), Toast.LENGTH_SHORT);
+        analyzer.push_char(primaryCode, elapsedRealtime() - timer);
     }
 
     @Override

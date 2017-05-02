@@ -29,6 +29,7 @@ public class KeyboardAnalyzer {
     private String scoreID = "score";
     private final double SCORE_THRESHOLD = 50;
     private final double COUNT_THRESHOLD = 5;
+    private final double STDDEV_THRESHOLD = 2;
 
 
     public KeyboardAnalyzer(Context context) {
@@ -54,27 +55,26 @@ public class KeyboardAnalyzer {
      * are delimited with space and backspace. Once a word is formed, it is pushed on for further
      * analysis (checked with the database).
      */
-    public void push_char(char c, long duration) {
+    public void push_char(int c, long duration) {
+        Toast.makeText(context, String.valueOf(c), Toast.LENGTH_SHORT);
         long latency = 0;
         if (curWord.length() > 0) {
             latency = getLatency(duration);
         }
-        if (c == ' ') {
+        if ((char)c == ' ') {
             // check if the word is in the database and integrate the timings
             updateEntry();
             // reset the word and the timings
             resetWord();
-        } else if (c == -5) {
+        } else if (c == Keyboard.KEYCODE_DELETE) {
             Toast.makeText(context, "pressed delete", Toast.LENGTH_SHORT);
             resetWord();
-        } else if ((c > 64 && c < 91) || (c > 96 && c < 123)) {
+        } else if ((c > 64 && c < 91) || (c > 96 && c < 123)) { // A-Z and a-z
             if (curWord.length() > 0) {
                 curTimings.add(latency);
             }
             curTimings.add(duration);
-            curWord = curWord.concat(String.valueOf(c));
-        } else {
-            Toast.makeText(context, "pressed " + String.valueOf(c), Toast.LENGTH_SHORT);
+            curWord = curWord.concat(String.valueOf((char)c));
         }
     }
 
@@ -122,7 +122,7 @@ public class KeyboardAnalyzer {
             long value = curTimings.get(i>>1);
             double avg = timings.get(i);
             double stdDev = Math.sqrt(timings.get(i + 1));
-            if (abs(value - avg) > 0.75*stdDev) {
+            if (abs(value - avg) < STDDEV_THRESHOLD*stdDev) {
                 miniScore++;
             }
         }
